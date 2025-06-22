@@ -81,7 +81,6 @@ const Societies = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="search-input"
           />
-          <button className="search-btn">🔍</button>
         </div>
       </div>
 
@@ -95,14 +94,12 @@ const Societies = () => {
             <div key={society._id} className="society-card">
               <div className="society-header">
                 <h2>{society.name}</h2>
-                <div className="society-rating">★ {society.ratings}</div>
+                <div className="society-rating">
+                  ★ {society.rating || 0} {/* Changed from society.ratings to society.rating */}
+                </div>
               </div>
 
               <div className="society-info">
-                <div className="info-row">
-                  <span className="info-label">Members:</span>
-                  <span className="info-value">{society.memberCount}</span>
-                </div>
                 <div className="info-row">
                   <span className="info-label">Email:</span>
                   <span className="info-value">{society.email}</span>

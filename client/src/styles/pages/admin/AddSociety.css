@@ -1,7 +1,8 @@
 .add-society-page {
   max-width: 850px;
-  margin: 2rem auto;
-  padding: 0 1.5rem;
+  margin: var(--spacing-xl) auto;
+  padding: 0 var(--spacing-lg);
+  animation: fadeIn var(--animation-speed-normal) ease-out;
 }
 
 .page-header {
@@ -28,28 +29,29 @@
 
 .form-card {
   background-color: var(--card-bg);
-  border-radius: 12px;
-  box-shadow: var(--card-shadow), 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-  padding: 2.5rem;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-xxl);
   border: 1px solid var(--border-color);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform var(--animation-speed-normal) ease, 
+              box-shadow var(--animation-speed-normal) ease;
 }
 
 .form-card:hover {
   transform: translateY(-5px);
-  box-shadow: var(--card-shadow), 0 15px 20px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 .success-message {
   background-color: #d1fae5;
   color: #065f46;
-  padding: 1.25rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: var(--spacing-xl);
   border-left: 4px solid #10b981;
   display: flex;
   align-items: center;
-  animation: slideIn 0.5s ease-out;
+  animation: slideIn var(--animation-speed-normal) ease-out;
 }
 
 .error-message {
@@ -70,8 +72,11 @@
 }
 
 .form-group {
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-xl);
   position: relative;
+  animation: fadeIn 0.6s ease-out forwards;
+  animation-delay: calc(var(--i, 0) * 0.12s);
+  opacity: 0;
 }
 
 .form-group label {
@@ -80,28 +85,47 @@
   font-weight: 600;
   color: var(--text-color);
   font-size: 1rem;
-  transition: color 0.2s ease;
+  transition: color var(--animation-speed-fast) ease;
+  position: relative;
+  padding-left: var(--spacing-xs);
+}
+
+.form-group label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background-color: var(--accent-color);
+  transition: height var(--animation-speed-normal) ease;
 }
 
 .form-group:focus-within label {
   color: var(--accent-color);
 }
 
+.form-group:focus-within label::before {
+  height: 80%;
+}
+
 .form-control {
   width: 100%;
   padding: 0.9rem 1rem;
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   background-color: var(--card-bg);
   color: var(--text-color);
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: all var(--animation-speed-normal) ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .form-control:focus {
   border-color: var(--accent-color);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  box-shadow: var(--shadow-focus);
   transform: translateY(-2px);
 }
 
@@ -131,25 +155,36 @@ textarea.form-control {
 
 .form-actions {
   display: flex;
-  gap: 1.25rem;
-  margin-top: 2.5rem;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-xxl);
   justify-content: flex-end;
+  align-items: stretch;
+  height: 56px;
 }
 
 .btn {
-  padding: 0.95rem 2rem;
+  padding: 0.95rem 0;
+  width: 180px;
+  height: 56px;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--border-radius-md);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--animation-speed-normal) ease;
   position: relative;
   overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   letter-spacing: 0.5px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  line-height: 1;
+  margin: 0;
+  vertical-align: middle;
+  transform: translateY(0);
+  z-index: 1; /* Ensure the button content is above the pseudo-element */
 }
 
 .btn:before {
@@ -173,15 +208,19 @@ textarea.form-control {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-color), #2563eb);
+  background: var(--gradient-primary);
   color: white;
-  box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 4px 12px -2px rgba(2, 91, 207, 0.3);
+  min-width: 180px;
+  border: none;
+  position: relative;
+  bottom:9px;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
+  background: var(--gradient-hover);
   transform: translateY(-3px);
-  box-shadow: 0 8px 15px -3px rgba(59, 130, 246, 0.6);
+  box-shadow: 0 8px 15px -3px rgba(2, 91, 207, 0.4);
 }
 
 .btn-primary:active {
@@ -201,15 +240,22 @@ textarea.form-control {
   background-color: transparent;
   color: var(--text-color);
   border: 2px solid var(--border-color);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
+  min-width: 180px;
+  padding: 0.95rem 0;
+  position: relative;
+  top: 19px;
+  margin: 0;
+  line-height: 1;
+  box-sizing: border-box;
 }
 
 .btn-secondary:hover {
-  background-color: var(--hover-bg, rgba(0, 0, 0, 0.05));
+  background-color: rgba(0, 0, 0, 0.03);
   transform: translateY(-3px);
   border-color: var(--accent-color);
   color: var(--accent-color);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-secondary:active {
@@ -219,12 +265,6 @@ textarea.form-control {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.form-group {
-  animation: fadeIn 0.6s ease-out forwards;
-  animation-delay: calc(var(--i, 0) * 0.12s);
-  opacity: 0;
 }
 
 .form-group:nth-child(1) { --i: 1; }
@@ -238,6 +278,7 @@ textarea.form-control {
 /* Custom scrollbar for textareas */
 textarea.form-control::-webkit-scrollbar {
   width: 8px;
+  border-radius: 4px;
 }
 
 textarea.form-control::-webkit-scrollbar-track {
@@ -256,14 +297,14 @@ textarea.form-control::-webkit-scrollbar-thumb:hover {
 
 @media (max-width: 768px) {
   .add-society-page {
-    padding: 0 1rem;
-    margin: 1.5rem auto;
+    padding: 0 var(--spacing-md);
+    margin: var(--spacing-lg) auto;
   }
   
   .form-card {
-    padding: 1.75rem;
-    border-radius: 10px;
-    margin-bottom: 2rem;
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-lg);
   }
   
   .page-header {
@@ -277,11 +318,20 @@ textarea.form-control::-webkit-scrollbar-thumb:hover {
   .form-actions {
     flex-direction: column;
     gap: 1rem;
+    align-items: center;
+    height: auto; /* Reset height for stacked buttons */
   }
   
   .btn {
     width: 100%;
-    padding: 0.85rem 1.5rem;
+    max-width: 300px;
+    height: 52px; /* Slightly smaller height on mobile */
+    padding: 0.85rem 0;
+  }
+  
+  .btn-secondary {
+    padding: 0.85rem 0; /* Match the primary button padding exactly */
+    top: 0; /* Reset any top position */
   }
   
   .success-message,
@@ -293,10 +343,14 @@ textarea.form-control::-webkit-scrollbar-thumb:hover {
 
 @media (max-width: 480px) {
   .form-card {
-    padding: 1.5rem;
+    padding: var(--spacing-md);
   }
   
   .page-header h1 {
     font-size: 1.5rem;
+  }
+  
+  .btn {
+    max-width: 100%; /* Full width on very small screens */
   }
 }

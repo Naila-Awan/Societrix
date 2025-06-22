@@ -40,35 +40,6 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
-.search-btn {
-  position: absolute;
-  right: 0.5rem; /* Moved further to the right (was 0.75rem) */
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  color: var(--text-color);
-  opacity: 0.6;
-  cursor: pointer;
-  padding: 0.5rem; /* Added padding to create a larger hit area */
-  border-radius: 50%; /* Makes the hover effect circular */
-  transition: opacity 0.2s, background-color 0.2s, transform 0.1s; /* Added transitions */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-bottom: 11px;
-}
-
-.search-btn:hover {
-  opacity: 1; /* Increased opacity on hover */
-  background-color: rgba(0, 0, 0, 0.05); /* Subtle background on hover */
-  transform: translateY(-50%) scale(1); /* Slight scale effect */
-}
-
-.search-btn:active {
-  transform: translateY(-50%) scale(0.95); /* Press effect */
-}
 
 .no-societies {
   background-color: var(--card-bg);
@@ -137,6 +108,77 @@
   font-size: 0.9rem;
   opacity: 0.7;
 }
+.society-actions button {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.5rem;
+  font-size: 0.9rem;
+  text-align: center;
+  white-space: nowrap;
+  transition: all 0.2s;
+  font-weight: 500;
+  height: 38px;
+  box-sizing: border-box;
+  line-height: 1;
+  margin: 0;
+  border-width: 1px;
+  border-style: solid;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+/* Ensuring consistent button styling */
+.btn {
+  appearance: none;
+  position: relative;
+  cursor: pointer;
+}
+
+.btn.btn-primary,
+.btn.btn-secondary,
+.btn.btn-danger {
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-family: inherit;
+}
+
+.btn.btn-primary {
+  background-color: var(--primary-color, #3b82f6);
+  color: white;
+  border-color: var(--primary-color, #3b82f6);
+  top: 10px;
+}
+
+.btn.btn-primary:hover {
+  background-color: var(--primary-hover, #2563eb);
+  border-color: var(--primary-hover, #2563eb);
+}
+
+.btn.btn-secondary {
+  background-color: white;
+  color: var(--text-color, #1f2937);
+  border-color: var(--border-color, #e5e7eb);
+  top: 10px;
+}
+
+.btn.btn-secondary:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.btn.btn-danger {
+  background-color: white;
+  color: #ef4444;
+  border-color: #ef4444;
+  top: 10px;
+}
+
+.btn.btn-danger:hover {
+  background-color: #ef4444;
+  color: white;
+}
+
 
 .info-value {
   font-weight: 500;

@@ -13,8 +13,14 @@ export default function LoginPage({ onLogin }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
- const navigate = useNavigate();
+  // localStorage.removeItem("auth_token");
+  // localStorage.removeItem("user_email");
+  // localStorage.removeItem("user_name");
+  // localStorage.removeItem("user_role");
+
+  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const handleLogin = async () => {
@@ -24,10 +30,12 @@ export default function LoginPage({ onLogin }) {
     }
 
     try {
-      const response = await axios.post("http://localhost:5000/api/login/", { email, password, role }); // Corrected API endpoint
+      setIsLoading(true);
+      setError("");
+
+      const response = await axios.post("http://localhost:5000/api/login/", { email, password, role });
       const { token, user } = response.data;
 
-      // Store token and user details in localStorage
       localStorage.setItem("auth_token", token);
       localStorage.setItem("user_email", user.email);
       localStorage.setItem("user_name", user.name);
@@ -36,7 +44,6 @@ export default function LoginPage({ onLogin }) {
       // Dispatch Redux actions
       dispatch(login({ user, userType: role.toLowerCase() }));
 
-      // Navigate to appropriate dashboard
       if (role === "Admin") {
         navigate("/dashboard");
       } else {
@@ -48,6 +55,8 @@ export default function LoginPage({ onLogin }) {
       } else {
         setError("Unable to connect to the server. Please try again later.");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -58,9 +67,9 @@ export default function LoginPage({ onLogin }) {
         <div className="welcome">Welcome to Societrix</div>
 
         <div className="input-group">
-          <input 
-            type="text" 
-            placeholder="Email" 
+          <input
+            type="text"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -74,23 +83,29 @@ export default function LoginPage({ onLogin }) {
         </div>
 
         <div className="input-group">
-          <input 
-            type={showPassword ? "text" : "password"} 
-            placeholder="Password" 
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <img 
-            src={showPassword ? show : hide} 
-            alt="Toggle visibility" 
-            className="icon" 
-            onClick={() => setShowPassword(!showPassword)} 
+          <img
+            src={showPassword ? show : hide}
+            alt="Toggle visibility"
+            className="icon"
+            onClick={() => setShowPassword(!showPassword)}
           />
         </div>
 
-        {error && <div style={{ color: "red", marginBottom: "10px" }}>{error}</div>}
+        {error && <div className="error-message">{error}</div>}
 
-        <button className="login-button" onClick={handleLogin}>Log In</button>
+        <button
+          className="login-button"
+          onClick={handleLogin}
+          disabled={isLoading}
+        >
+          {isLoading ? "Logging in..." : "Log In"}
+        </button>
       </div>
     </div>
   );

@@ -89,6 +89,11 @@ const SocietyManagement = () => {
     });
   };
 
+  // Setup API base URL based on environment
+  const API_URL = process.env.NODE_ENV === 'production' 
+    ? '/api'
+    : 'http://localhost:5000/api';
+
   const handleAddMember = async () => {
     if (!newMember.name || !newMember.email) {
       alert('Name and email are required.');
@@ -102,10 +107,25 @@ const SocietyManagement = () => {
     }
   
     try {
-      const response = await axios.post(`/api/societies/${currentSociety._id}/members`, newMember);
-      const addedMember = response.data;
-  
-      setMembers([...members, addedMember]); // Update the local state with the new member
+      console.log('Adding member to society:', currentSociety._id);
+      
+      // Ensure we have a valid society ID
+      if (currentSociety._id === "placeholder-id") {
+        throw new Error("Cannot add members: Society not properly identified");
+      }
+      
+      // Use the correct API URL format matching the server route
+      const response = await axios.post(`${API_URL}/societies/${currentSociety._id}/members`, newMember,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+        });
+      
+      console.log('Member added successfully:', response.data);
+      
+      setMembers([...members, response.data]); // Update the local state with the new member
       setNewMember({
         name: "",
         email: "",
@@ -116,7 +136,13 @@ const SocietyManagement = () => {
       alert('Member added successfully!');
     } catch (error) {
       console.error('Error adding member:', error);
-      alert('Failed to add member. Please try again.');
+      
+      // Provide more detailed error feedback
+      const errorMsg = error.response?.data?.message || 
+                       error.message || 
+                       'Failed to add member. Please try again.';
+                       
+      alert(`Error adding member: ${errorMsg}`);
     }
   };
 

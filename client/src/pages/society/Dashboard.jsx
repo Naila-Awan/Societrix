@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchSocieties } from '../../features/society/societySlice.mjs';
 import { fetchEvents } from '../../features/events/eventSlice.mjs';
+import { fetchSocietyReports } from '../../features/reports/reportSlice.mjs';
 import '../../styles/pages/society/Dashboard.css';
 
 const SocietyDashboard = () => {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get society info and events from Redux store
+  // Get society info, events and reports from Redux store
   const { societies, status: societyStatus, error: societyError } = useSelector((state) => state.society);
   const { events, status: eventStatus, error: eventError } = useSelector((state) => state.events);
+  const { reports = [] } = useSelector((state) => state.reports || {});
   const { user } = useSelector((state) => state.auth);
 
   const [dashboardData, setDashboardData] = useState({
@@ -26,6 +28,12 @@ const SocietyDashboard = () => {
       try {
         await dispatch(fetchSocieties());
         await dispatch(fetchEvents());
+        
+        // Only fetch reports if we have a user email
+        if (user?.email) {
+          await dispatch(fetchSocietyReports(user.email));
+        }
+        
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -34,7 +42,7 @@ const SocietyDashboard = () => {
     };
 
     fetchDashboardData();
-  }, [dispatch]);
+  }, [dispatch, user]);
 
   useEffect(() => {
     if (societyStatus === 'succeeded' && eventStatus === 'succeeded') {
@@ -66,21 +74,32 @@ const SocietyDashboard = () => {
         event => event.status === 'pending'
       ).length;
       
-      // Get recent events for this society
-      const recentEvents = societyEvents
+      // Get recent events for this society and merge with report data
+      const completedEventsWithDetails = societyEvents
         .filter(event => event.status === 'completed')
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 4);
+        .slice(0, 4)
+        .map(event => {
+          // Find the corresponding report for this event to get attendees
+          const eventReport = Array.isArray(reports) 
+            ? reports.find(report => report.eventId === event._id)
+            : null;
+          
+          return {
+            ...event,
+            attendeeCount: eventReport?.attendeeCount || 'Not reported'
+          };
+        });
 
       setDashboardData({
         societyDetails: currentSociety || null,
         upcomingEvents,
         completedEvents,
         pendingEvents,
-        recentEvents,
+        recentEvents: completedEventsWithDetails,
       });
     }
-  }, [events, societies, societyStatus, eventStatus, user]);
+  }, [events, societies, societyStatus, eventStatus, reports, user]);
 
   if (isLoading || societyStatus === 'loading' || eventStatus === 'loading') {
     return (
@@ -155,7 +174,7 @@ const SocietyDashboard = () => {
                       <td>{event.eventName}</td>
                       <td>{new Date(event.date).toLocaleDateString()}</td>
                       <td>{event.venue || 'N/A'}</td>
-                      <td>{event.attendees || 'N/A'}</td>
+                      <td>{event.attendeeCount}</td>
                     </tr>
                   ))
                 ) : (

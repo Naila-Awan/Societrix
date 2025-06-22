@@ -36,14 +36,18 @@ const SidebarSociety = ({ isOpen, toggleSidebar }) => {
           <img src={logo} alt="Societrix Logo" className="sidebar-logo" />
           <h2 className="sidebar-title">Societrix</h2>
         </div>
-        <button className="sidebar-toggle" onClick={toggleSidebar}>
+        <button 
+          className="sidebar-toggle" 
+          onClick={toggleSidebar}
+          aria-label={isOpen ? "Close Sidebar" : "Open Sidebar"}
+        >
           {isOpen ? '←' : '→'}
         </button>
       </div>
 
       <div className="sidebar-content">
         <div className="main-menu">
-          <h3>MAIN MENU</h3>
+          <h3>Main Navigation</h3>
           <ul className="nav-links">
             <li>
               <NavLink
@@ -77,7 +81,7 @@ const SidebarSociety = ({ isOpen, toggleSidebar }) => {
             </li>
             <li>
               <NavLink
-                to="/society-reports" // Ensure the correct path is used
+                to="/society-reports"
                 className={({ isActive }) => (isActive ? "active" : "")}
                 title="Reports"
               >
@@ -108,26 +112,22 @@ const SidebarSociety = ({ isOpen, toggleSidebar }) => {
           </ul>
         </div>
 
-        {isOpen && (
-          <div className="top-societies">
-            <h3>TOP SOCIETIES</h3>
-            <ul>
-              {topSocieties.length > 0 ? (
-                topSocieties.map(society => (
-                  <li key={society._id}>
-                    <span className="society-name">{society.name}</span>
-                    <span className="society-rating">★ {society.rating ? society.rating.toFixed(1) : 'N/A'}</span>
-                  </li>
-                ))
-              ) : (
-                <li className="no-societies">No societies available</li>
-              )}
-            </ul>
-          </div>
-        )}
-
-        <div className="sidebar-footer">
-          <p>Societrix v1.0</p>
+        <div className="top-societies">
+          <h3>Top Performing</h3>
+          <ul>
+            {topSocieties.length > 0 ? (
+              topSocieties.map(society => (
+                <li key={society._id}>
+                  <span className="society-name">{society.name}</span>
+                  <span className="society-rating">
+                    {society.rating ? society.rating.toFixed(1) : 'N/A'} ★
+                  </span>
+                </li>
+              ))
+            ) : (
+              <li className="no-societies">No societies available</li>
+            )}
+          </ul>
         </div>
       </div>
     </aside>

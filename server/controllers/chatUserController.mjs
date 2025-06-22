@@ -4,9 +4,12 @@ import ChatMessage from '../models/ChatMessages.mjs';
 // Get all chats
 export const getAllChats = async (req, res) => {
   try {
+    // Return all chats for everyone - don't filter by userType
+    // This ensures society users can see all chats
     const chats = await ChatUser.find();
     res.status(200).json(chats);
   } catch (error) {
+    console.error('Error fetching chats:', error);
     res.status(500).json({ message: 'Error fetching chats', error: error.message });
   }
 };

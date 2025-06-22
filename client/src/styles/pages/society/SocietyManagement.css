@@ -209,6 +209,7 @@
 }
 
 .btn-primary {
+  top: 0;
   background-color: var(--primary-color, #6366f1);
   color: white;
 }

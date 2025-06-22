@@ -29,6 +29,7 @@ const EventRequests = () => {
     amount: 0,
   });
   const [showCustomApprovalModal, setShowCustomApprovalModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
 
   // Fetch events and societies on component mount
   useEffect(() => {
@@ -52,6 +53,14 @@ const EventRequests = () => {
     }).format(amount);
   };
 
+  // Filter events based on status filter
+  const filteredEvents = Array.isArray(eventsData)
+    ? eventsData.filter((event) => {
+      if (statusFilter === 'all') return true;
+      return event && event.status === statusFilter;
+    })
+    : [];
+
   // Ensure events is always an array before filtering
   const pendingEvents = Array.isArray(eventsData)
     ? eventsData.filter((event) => event && event.status === "pending")
@@ -66,27 +75,27 @@ const EventRequests = () => {
 
   // Handle event approval with full budget
   const handleApprove = async (eventId) => {
-  try {
-    const event = findEvent(eventId);
-    if (!event) return;
+    try {
+      const event = findEvent(eventId);
+      if (!event) return;
 
-    const budgetImpact = event.budget - event.sponsorship;
-    const newAvailable = availableFunds - budgetImpact;
+      const budgetImpact = event.budget - event.sponsorship;
+      const newAvailable = availableFunds - budgetImpact;
 
-    // Update event status using Redux action
-    await dispatch(updateEventStatus({
-      eventId: eventId,
-      statusData: {
-        status: "approved"
-      }
-    })).unwrap();
+      // Update event status using Redux action
+      await dispatch(updateEventStatus({
+        eventId: eventId,
+        statusData: {
+          status: "approved"
+        }
+      })).unwrap();
 
-    // Update local state
-    setAvailableFunds(newAvailable);
-  } catch (error) {
-    console.error("Error approving event:", error);
-  }
-};
+      // Update local state
+      setAvailableFunds(newAvailable);
+    } catch (error) {
+      console.error("Error approving event:", error);
+    }
+  };
 
   // Open custom approval modal
   const openCustomApprovalModal = (eventId) => {
@@ -104,43 +113,43 @@ const EventRequests = () => {
   };
 
   // Handle custom budget approval
-const handleCustomApprove = async () => {
-  try {
-    const event = findEvent(customApprovalData.id);
-    if (!event) return;
+  const handleCustomApprove = async () => {
+    try {
+      const event = findEvent(customApprovalData.id);
+      if (!event) return;
 
-    if (customApprovalData.amount <= 0) {
-      alert("Please enter a valid budget amount.");
-      return;
-    }
-
-    if (customApprovalData.amount > availableFunds) {
-      alert("The approved amount cannot exceed available funds.");
-      return;
-    }
-
-    // Calculate the new approved budget (custom amount + sponsorship)
-    const approvedBudget = customApprovalData.amount + event.sponsorship;
-
-    // Update event using Redux action
-    await dispatch(updateEventStatus({
-      eventId: customApprovalData.id,
-      statusData: {
-        status: "approved",
-        budget: approvedBudget
+      if (customApprovalData.amount <= 0) {
+        alert("Please enter a valid budget amount.");
+        return;
       }
-    })).unwrap();
 
-    // Update local state
-    setAvailableFunds((prev) => prev - customApprovalData.amount);
+      if (customApprovalData.amount > availableFunds) {
+        alert("The approved amount cannot exceed available funds.");
+        return;
+      }
 
-    // Reset and close modal
-    setShowCustomApprovalModal(false);
-    setCustomApprovalData({ id: null, amount: 0 });
-  } catch (error) {
-    console.error("Error applying custom budget:", error);
-  }
-};
+      // Calculate the new approved budget (custom amount + sponsorship)
+      const approvedBudget = customApprovalData.amount + event.sponsorship;
+
+      // Update event using Redux action
+      await dispatch(updateEventStatus({
+        eventId: customApprovalData.id,
+        statusData: {
+          status: "approved",
+          budget: approvedBudget
+        }
+      })).unwrap();
+
+      // Update local state
+      setAvailableFunds((prev) => prev - customApprovalData.amount);
+
+      // Reset and close modal
+      setShowCustomApprovalModal(false);
+      setCustomApprovalData({ id: null, amount: 0 });
+    } catch (error) {
+      console.error("Error applying custom budget:", error);
+    }
+  };
 
   // Open rejection modal
   const openRejectionModal = (eventId) => {
@@ -150,28 +159,28 @@ const handleCustomApprove = async () => {
 
   // Handle event rejection
   const handleReject = async () => {
-  try {
-    if (!rejectionData.feedback.trim()) {
-      alert("Please provide feedback for rejection");
-      return;
-    }
-
-    // Update event status using Redux action
-    await dispatch(updateEventStatus({
-      eventId: rejectionData.id,
-      statusData: {
-        status: "rejected",
-        rejectReason: rejectionData.feedback
+    try {
+      if (!rejectionData.feedback.trim()) {
+        alert("Please provide feedback for rejection");
+        return;
       }
-    })).unwrap();
 
-    // Reset and close modal
-    setShowRejectionModal(false);
-    setRejectionData({ id: null, feedback: "" });
-  } catch (error) {
-    console.error("Error rejecting event:", error);
-  }
-};
+      // Update event status using Redux action
+      await dispatch(updateEventStatus({
+        eventId: rejectionData.id,
+        statusData: {
+          status: "rejected",
+          rejectReason: rejectionData.feedback
+        }
+      })).unwrap();
+
+      // Reset and close modal
+      setShowRejectionModal(false);
+      setRejectionData({ id: null, feedback: "" });
+    } catch (error) {
+      console.error("Error rejecting event:", error);
+    }
+  };
 
   const handleBudgetUpdate = () => {
     if (isNaN(additionalFunds)) {
@@ -186,6 +195,33 @@ const handleCustomApprove = async () => {
     setShowBudgetModal(false);
   };
 
+  // New function to mark event as completed
+  const handleMarkAsCompleted = async (eventId) => {
+    try {
+      const API_URL = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api';
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert("Authorization token is missing. Please log in again.");
+        return;
+      }
+
+      await axios.put(
+        `${API_URL}/events/${eventId}/complete`,
+        {}, // Empty body for PUT request
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      dispatch(getAllEvents());
+    } catch (error) {
+      console.error("Error marking event as completed:", error);
+      alert("Failed to mark event as completed. Please try again.");
+    }
+  };
+
   if (isLoading) {
     return <div className="loading">Loading event requests...</div>;
   }
@@ -194,14 +230,27 @@ const handleCustomApprove = async () => {
     <div className="event-requests-page">
       <div className="page-header">
         <h1>Event Requests</h1>
+        <div className="status-filter">
+          <label>Filter by Status:</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="status-select"
+          >
+            <option value="all">All Events</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
         <div className="budget-section">
           <div className="budget-display">
             <div className="budget-item">
               <span>Available Funds:</span>
               <span
-                className={`budget-amount ${
-                  availableFunds < 20000 ? "low-budget" : ""
-                }`}
+                className={`budget-amount ${availableFunds < 20000 ? "low-budget" : ""
+                  }`}
               >
                 {formatCurrency(availableFunds)}
               </span>
@@ -219,22 +268,16 @@ const handleCustomApprove = async () => {
         </div>
       </div>
 
-      {pendingEvents.length === 0 ? (
+      {filteredEvents.length === 0 ? (
         <div className="no-requests">
-          No pending event requests at the moment
+          No {statusFilter !== 'all' ? statusFilter : ''} events found
         </div>
       ) : (
         <div className="event-requests-list">
-          {pendingEvents.map((event) => (
+          {filteredEvents.map((event) => (
             <div
               key={event._id}
-              className={`event-card ${
-                event.status === "approved"
-                  ? "approved"
-                  : event.status === "rejected"
-                  ? "rejected"
-                  : ""
-              }`}
+              className={`event-card ${event.status}`}
             >
               <div className="event-header">
                 <h3>{event.eventName}</h3>
@@ -311,6 +354,18 @@ const handleCustomApprove = async () => {
                     onClick={() => openRejectionModal(event._id)}
                   >
                     Reject
+                  </button>
+                </div>
+              )}
+
+              {event.status === "approved" && (
+                <div className="event-actions">
+                  <button
+                    className="btn btn-complete"
+                    onClick={() => handleMarkAsCompleted(event._id)}
+                    title="Mark event as completed"
+                  >
+                    Mark as Completed
                   </button>
                 </div>
               )}

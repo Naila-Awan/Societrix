@@ -13,8 +13,8 @@ router.put('/societies/:id/rating', updateSocietyRating);
 router.get('/ensure-society-chats', ensureSocietyChats);
 router.post('/ensure-society-chats', ensureSocietyChats);
 
-// Add a member to a society
-router.post('/:id/members', addMemberToSociety);
+// Add a member to a society - corrected route to match client expectation
+router.post('/societies/:id/members', addMemberToSociety);
 
 export default router;
 

@@ -6,9 +6,9 @@ import {
   updateEvent,
   getEventsBySociety,
   updateEventStatus,
-  getCompletedEventsByEmail 
+  getCompletedEventsByEmail,
+  markEventAsCompleted
 } from '../controllers/eventController.mjs';
- // Assuming you have auth middleware
 
 const router = express.Router();
 
@@ -18,6 +18,7 @@ router.get('/:id', getEventById);
 router.get('/society/:societyId', getEventsBySociety);
 router.get('/completed/email/:email', getCompletedEventsByEmail);
 router.put('/:id/status', updateEventStatus); 
+router.put('/:id/complete', markEventAsCompleted); // New route for marking events as completed
 router.post('/', createEvent); 
 router.put('/:id', updateEvent);
 

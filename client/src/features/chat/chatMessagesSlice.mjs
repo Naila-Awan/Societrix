@@ -5,13 +5,19 @@ const API_URL = process.env.NODE_ENV === 'production'
   ? '/api' 
   : 'http://localhost:5000/api';
 
+const config = {
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+  },
+};
+
 // Fetch messages for a specific chat
 export const fetchMessages = createAsyncThunk(
   'chatMessages/fetchMessages',
   async (chatId, { rejectWithValue }) => {
     try {
-      // Fix the endpoint to match your server routes
-      const response = await axios.get(`${API_URL}/chat/messages/${chatId}`);
+      const response = await axios.get(`${API_URL}/chat/messages/${chatId}`, config);
       return { chatId, messages: response.data };
     } catch (error) {
       console.error('Error fetching messages:', error.response?.data || error.message);
@@ -25,32 +31,20 @@ export const sendMessage = createAsyncThunk(
   'chatMessages/sendMessage',
   async (messageData, { dispatch, getState, rejectWithValue }) => {
     try {
-      // Send the message to the API
-      const response = await axios.post(`${API_URL}/chat/messages`, messageData);
-      
-      // After successful message sending, update the messages in the chat
+      const response = await axios.post(`${API_URL}/chat/messages`, messageData, config);
       const message = response.data;
-      
-      // Get the current chat messages
+
       const { chatMessages } = getState();
       const chatId = messageData.chatId;
       const currentMessages = chatMessages.messages[chatId] || [];
-      
-      // Update the messages array with the new message
       const updatedMessages = [...currentMessages, message];
-      
-      // Dispatch action to update unread counts
-      // We'll use a simple action to increment the unread count
+
       dispatch({
         type: 'chatUsers/incrementUnreadCount',
-        payload: { chatId }
+        payload: { chatId },
       });
-      
-      return { 
-        chatId,
-        message,
-        messages: updatedMessages
-      };
+
+      return { chatId, message, messages: updatedMessages };
     } catch (error) {
       console.error('Error sending message:', error.response?.data || error.message);
       return rejectWithValue(error.response?.data || 'Failed to send message');
@@ -64,7 +58,7 @@ export const markMessagesAsRead = createAsyncThunk(
   async (chatId, { dispatch, rejectWithValue }) => {
     try {
       // Call API to mark messages as read
-      await axios.put(`${API_URL}/chat/messages/${chatId}/read`);
+      await axios.put(`${API_URL}/chat/messages/${chatId}/read`, config);
       
       // Reset unread count
       dispatch({

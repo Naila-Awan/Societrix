@@ -2,8 +2,10 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import Admin from '../models/Admin.mjs';
 import Society from '../models/Society.mjs';
+import dotenv from 'dotenv';
 
-const JWT_SECRET = "your_jwt_secret_key"; // Replace with a secure key
+dotenv.config();
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export const login = async (req, res) => {
     const { email, password, role } = req.body;

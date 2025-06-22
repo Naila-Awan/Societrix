@@ -55,21 +55,25 @@ function App() {
       setDarkMode(true);
       document.body.classList.add("dark-mode");
     }
-    // Initialize chat system
-    const setupChatSystem = async () => {
-      try {
-        const result = await initializeChatSystem();
-        console.log('Chat system initialized:', result);
-        setChatSystemInitialized(true);
-      } catch (error) {
-        console.error('Failed to initialize chat system:', error);
-        // Continue anyway, as it's not critical
-        setChatSystemInitialized(true);
-      }
-    };
-
-    setupChatSystem();
   }, []);
+
+  useEffect(() => {
+    // Initialize chat system only after user logs in
+    if (isAuthenticated && !chatSystemInitialized) {
+      const setupChatSystem = async () => {
+        try {
+          const result = await initializeChatSystem();
+          console.log('Chat system initialized:', result);
+          setChatSystemInitialized(true);
+        } catch (error) {
+          console.error('Failed to initialize chat system:', error);
+          setChatSystemInitialized(true); // Continue anyway
+        }
+      };
+
+      setupChatSystem();
+    }
+  }, [isAuthenticated, chatSystemInitialized]);
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -79,7 +83,11 @@ function App() {
 
   const handleLogout = () => {
     dispatch(logout());
-    localStorage.removeItem("auth");
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user_email");
+    localStorage.removeItem("user_name");
+    localStorage.removeItem("user_role");
+
   };
 
   if (isLoading) {
@@ -100,7 +108,7 @@ function App() {
               path="/"
               element={
                 isAuthenticated ? (
-                  <Navigate to={userType === "admin" ? "/dashboard" : "/society-dashboard"} />
+                  <Navigate to={userType === "admin" ? "/dashboard" : "/change-password"} />
                 ) : (
                   <LoginPage />
                 )
@@ -144,7 +152,7 @@ function App() {
                     user={user}
                   />
                 ) : (
-                  <Navigate to="/" replace={true} /> // Ensure proper redirection for unauthorized access
+                  <Navigate to="/" replace={true} />
                 )
               }
             >
@@ -153,7 +161,7 @@ function App() {
               <Route path="event-calendar" element={<EventCalendar />} />
               <Route path="settings" element={<Settings />} />
               <Route path="chat-page" element={<ChatPage />} />
-              <Route path="society-reports" element={<SocietyReports />} /> {/* Ensure this route is accessible */}
+              <Route path="society-reports" element={<SocietyReports />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

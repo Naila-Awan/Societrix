@@ -5,6 +5,13 @@ const API_URL = process.env.NODE_ENV === 'production'
   ? '/api' 
   : 'http://localhost:5000/api';
 
+const config = {
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+  },
+};
+
 // Fetch all chats for the current user
 export const fetchChats = createAsyncThunk(
   'chatUsers/fetchChats',
@@ -12,9 +19,18 @@ export const fetchChats = createAsyncThunk(
     try {
       const { auth } = getState();
       const userType = auth.userType || 'society';
+      const user = auth.user || {};
       
-      // Fix the endpoint to match your server routes
-      const response = await axios.get(`${API_URL}/chat/users?userType=${userType}`);
+      // Determine query parameters based on user type
+      let queryParams = `?userType=${userType}`;
+      
+      // If society user, add societyId or email for filtering
+      if (userType === 'society' && (user.societyId || user.email)) {
+        queryParams += user.societyId ? `&societyId=${user.societyId}` : '';
+        queryParams += user.email ? `&societyEmail=${encodeURIComponent(user.email)}` : '';
+      }
+      
+      const response = await axios.get(`${API_URL}/chat/users${queryParams}`, config);
       return response.data;
     } catch (error) {
       console.error('Error fetching chats:', error.response?.data || error.message);
@@ -28,7 +44,7 @@ export const createChat = createAsyncThunk(
   'chatUsers/createChat',
   async (chatData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/chat/users`, chatData);
+      const response = await axios.post(`${API_URL}/chat/users`, chatData, config);
       return response.data;
     } catch (error) {
       console.error('Error creating chat:', error.response?.data || error.message);

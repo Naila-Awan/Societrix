@@ -5,6 +5,13 @@ const API_URL = process.env.NODE_ENV === 'production'
   ? '/api' 
   : 'http://localhost:5000/api';
 
+const config = {
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('auth_token')}`, // Assuming token is stored in localStorage
+  },
+};
+
 // Fetch completed events for a specific society using email
 export const fetchCompletedEvents = createAsyncThunk(
   'reports/fetchCompletedEvents',
@@ -16,7 +23,7 @@ export const fetchCompletedEvents = createAsyncThunk(
       }
 
       // Ensure this matches the backend route
-      const response = await axios.get(`${API_URL}/events/completed/email/${email}`);
+      const response = await axios.get(`${API_URL}/events/completed/email/${email}`, config);
       return response.data;
     } catch (error) {
       console.error('Error fetching completed events:', error);
@@ -36,7 +43,7 @@ export const fetchSocietyReports = createAsyncThunk(
       }
 
       // Make the actual API call
-      const response = await axios.get(`${API_URL}/reports/society/email/${email}`);
+      const response = await axios.get(`${API_URL}/reports/society/email/${email}`, config);
       return response.data;
     } catch (error) {
       console.error('Error fetching society reports:', error);
@@ -53,7 +60,7 @@ export const submitEventReport = createAsyncThunk(
       // Exclude `submissionDate` and `rating` from the payload
       const { submissionDate, rating, ...payload } = reportData;
 
-      const response = await axios.post(`${API_URL}/reports`, payload);
+      const response = await axios.post(`${API_URL}/reports`, payload, config);
       return response.data;
     } catch (error) {
       console.error('Error submitting report:', error);
@@ -62,16 +69,38 @@ export const submitEventReport = createAsyncThunk(
   }
 );
 
-// Add the missing updateReportRating function
+// Fix the updateReportRating function - use PUT instead of PATCH and correct the URL path
 export const updateReportRating = createAsyncThunk(
   'reports/updateReportRating',
   async ({ id, rating }, { rejectWithValue }) => {
     try {
-      const response = await axios.patch(`${API_URL}/reports/${id}/rating`, { rating });
+      console.log(`Sending PUT request to ${API_URL}/reports/${id}/rating with rating ${rating}`);
+      
+      // Use the correct endpoint that matches the server routes
+      const response = await axios.put(`${API_URL}/reports/${id}/rating`, { rating }, config);
+      
+      console.log('Rating update successful:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error updating report rating:', error);
       return rejectWithValue(error.response?.data || 'Failed to update report rating');
+    }
+  }
+);
+
+// Enhance the fetch all reports action to include event and society data
+export const fetchAllReports = createAsyncThunk(
+  'reports/fetchAllReports',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}/reports/all`, config);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        'Failed to fetch reports'
+      );
     }
   }
 );
@@ -204,6 +233,20 @@ const reportSlice = createSlice({
         }
       })
       .addCase(updateReportRating.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      
+      // Handle fetchAllReports
+      .addCase(fetchAllReports.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllReports.fulfilled, (state, action) => {
+        state.loading = false;
+        state.reports = action.payload;
+      })
+      .addCase(fetchAllReports.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

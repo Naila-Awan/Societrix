@@ -6,6 +6,15 @@ import { fetchSocieties } from '../../features/society/societySlice.mjs';
 import axios from 'axios';
 import '../../styles/pages/admin/Chat.css';
 
+const API_URL = 'http://localhost:5000/api';
+
+const config = {
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+  },
+};
+
 const Chat = () => {
   const dispatch = useDispatch();
   const { chats = [], activeChat = 'announcements', unreadCounts = {}, status: chatsStatus = 'idle' } = useSelector((state) => state.chatUsers || {});
@@ -17,53 +26,40 @@ const Chat = () => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
   const [lastSocietyUpdate, setLastSocietyUpdate] = useState(0);
-  const [isInitializing, setIsInitializing] = useState(true);
 
-  // Fetch all societies from the database
   useEffect(() => {
     dispatch(fetchSocieties())
       .unwrap()
       .then((fetchedSocieties) => {
-        console.log('Societies fetched:', fetchedSocieties);
         setLastSocietyUpdate(Date.now());
       })
       .catch(error => console.error('Failed to fetch societies:', error));
   }, [dispatch]);
 
-  // Fetch existing chats
   useEffect(() => {
     dispatch(fetchChats())
       .unwrap()
       .then((fetchedChats) => {
-        console.log('Chats fetched:', fetchedChats);
         ensureAllSocietiesHaveChats();
       })
       .catch(error => console.error('Failed to fetch chats:', error));
   }, [dispatch, lastSocietyUpdate]);
 
-  // Function to create chats for societies that don't have them
   const ensureAllSocietiesHaveChats = async () => {
     try {
       if (!Array.isArray(societies) || societies.length === 0) {
-        console.log('No societies available yet');
-        setIsInitializing(false);
         return;
       }
       
-      console.log('Checking if all societies have chats...');
       
       try {
-        // Call our API endpoint to ensure all society chats exist
-        const response = await axios.post('http://localhost:5000/api/ensure-society-chats', {
+        const response = await axios.post(`${API_URL}/ensure-society-chats`, {
           societies: societies.map(society => ({
             _id: society._id,
             name: society.name
           }))
-        });
+        }, config);
         
-        console.log('Society chats ensured:', response.data);
-        
-        // Refresh the chats list
         dispatch(fetchChats());
         
       } catch (error) {
@@ -77,7 +73,6 @@ const Chat = () => {
     }
   };
 
-  // Helper function to generate avatar for society based on name
   function getAvatarForSociety(societyName) {
     const societyType = societyName.toLowerCase();
     
@@ -101,20 +96,17 @@ const Chat = () => {
       return '🔢';
     } else if (societyType.includes('game') || societyType.includes('gaming')) {
       return '🎮';
-    }
+    } 
     
-    // Default emoji
     return '🏛️';
   }
 
-  // Fetch messages for active chat whenever it changes
   useEffect(() => {
     if (activeChat) {
       dispatch(fetchMessages(activeChat));
     }
   }, [dispatch, activeChat]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages, activeChat]);
@@ -123,7 +115,6 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Handle sending messages with better error handling
   const handleSend = () => {
     if (!newMessage.trim()) return;
     
@@ -134,12 +125,9 @@ const Chat = () => {
       chatId: activeChat
     };
     
-    console.log('Sending message:', messageData);
-    
     dispatch(sendMessage(messageData))
       .unwrap()
       .then(response => {
-        console.log('Message sent successfully:', response);
         setNewMessage('');
       })
       .catch(error => {
@@ -230,11 +218,6 @@ const Chat = () => {
 
   return (
     <div className="chat-page">
-      {isInitializing ? (
-        <div className="initializing-overlay">
-          <div className="loading">Setting up chat system...</div>
-        </div>
-      ) : null}
       
       <div className="chat-container">
         <div className="chat-sidebar">
@@ -355,11 +338,10 @@ const Chat = () => {
               }}
             ></textarea>
             <button 
-              className={`send-button ${newMessage.trim() ? 'active' : ''}`}
+              className="send-button"
               onClick={handleSend}
               disabled={!newMessage.trim() || messagesStatus === 'sending'}
-            ></button>
-            <button>
+            >
               <span className="send-icon">📨</span>
             </button>
           </div>

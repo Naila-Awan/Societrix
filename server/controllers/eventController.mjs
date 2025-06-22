@@ -226,13 +226,30 @@ export const getCompletedEventsByEmail = async (req, res) => {
     // Find all completed events for the given society
     const completedEvents = await Event.find({ societyId: society._id, status: 'completed' });
 
-    if (!completedEvents || completedEvents.length === 0) {
-      return res.status(404).json({ message: 'No completed events found for this society' });
-    }
-
-    res.status(200).json(completedEvents);
+    // Return empty array instead of 404 when no events found
+    return res.status(200).json(completedEvents);
   } catch (error) {
     console.error('Error fetching completed events by email:', error);
     res.status(500).json({ message: 'Error fetching completed events', error: error.message });
+  }
+};
+
+export const markEventAsCompleted = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Update the event status to completed
+    event.status = 'completed';
+    await event.save();
+
+    console.log('Event marked as completed successfully:', event._id);
+    res.json(event);
+  } catch (err) {
+    console.error('Error marking event as completed:', err.message);
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };

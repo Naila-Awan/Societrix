@@ -9,20 +9,17 @@ const ChatPage = () => {
   const { user } = useSelector((state) => state.auth);
   const { chats = [], activeChat = 'announcements', unreadCounts = {}, status: chatsStatus = 'idle' } = useSelector((state) => state.chatUsers || {});
   const { messages = {}, status: messagesStatus = 'idle' } = useSelector((state) => state.chatMessages || {});
+  const { darkMode } = useSelector((state) => state.theme || {});
   
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
-  const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch existing chats - for society we only need to get our own chat and announcements
+  // Fetch existing chats
   useEffect(() => {
     setError(null);
     dispatch(fetchChats())
       .unwrap()
-      .then(() => {
-        setIsInitializing(false);
-      })
       .catch(error => {
         console.error('Failed to fetch chats:', error);
         setIsInitializing(false);
@@ -63,8 +60,6 @@ const ChatPage = () => {
       chatId: activeChat
     };
     
-    console.log('Sending message:', messageData);
-    
     dispatch(sendMessage(messageData))
       .unwrap()
       .then(() => {
@@ -98,21 +93,17 @@ const ChatPage = () => {
     dispatch(setActiveChat(chatId));
   };
 
-  // Find our society chat
-  const societyChat = Array.isArray(chats) 
-    ? chats.find(chat => 
-        chat?.chatType === 'society' && 
-        (chat?.societyId === user?.societyId || chat?.societyEmail === user?.email)
-      )
-    : null;
+  // Get society ID or email for current user
+  const societyId = user?.societyId;
+  const societyEmail = user?.email;
+  const societyName = user?.name;
 
-  // Filter relevant chats for society: announcements and their own chat
+  // Find all relevant chats - announcements, admin chat and chats with other societies
   const relevantChats = Array.isArray(chats) 
-    ? chats.filter(chat => 
-        chat?.chatId === 'announcements' || 
-        (chat?.chatType === 'society' && 
-         (chat?.societyId === user?.societyId || chat?.societyEmail === user?.email))
-      )
+    ? chats.filter(chat => {
+        // Include all chats - don't filter anything out
+        return true;
+      })
     : [];
 
   const getMessagePreview = (messageList) => {
@@ -127,7 +118,7 @@ const ChatPage = () => {
     
     try {
       return typeof latestMessage.content === 'string' 
-        ? latestMessage.content.substring(0, 30) + '...'
+        ? latestMessage.content.substring(0, 30) + (latestMessage.content.length > 30 ? '...' : '')
         : 'Invalid message content';
     } catch (error) {
       console.error('Error getting message preview:', error);
@@ -141,20 +132,42 @@ const ChatPage = () => {
     return Math.random().toString(36).substr(2, 9);
   };
 
-  const currentChat = activeChat === 'announcements' 
-    ? { chatId: 'announcements', chatName: 'Announcements', avatar: '📢' } 
-    : societyChat || { chatName: 'Admin Chat', avatar: '👨‍💼' };
+  // Get the current chat name and avatar
+  const getCurrentChatInfo = () => {
+    if (activeChat === 'announcements') {
+      return { 
+        name: 'Announcements', 
+        avatar: '📢',
+        description: 'University-wide announcements and discussions'
+      };
+    }
 
+    const currentChat = chats.find(chat => chat?.chatId === activeChat);
+    
+    if (currentChat) {
+      // Check if this is the society's chat with admin
+      const isSocietyOwnChat = 
+        (societyId && currentChat.chatId === `society-${societyId}`) ||
+        (societyEmail && currentChat.members?.some(m => m.userId === societyEmail)) ||
+        (societyName && currentChat.chatName === societyName);
+        
+      return {
+        name: isSocietyOwnChat ? 'Admin Chat' : currentChat.chatName,
+        avatar: currentChat.avatar || (isSocietyOwnChat ? '👨‍💼' : '🏛️'),
+        description: isSocietyOwnChat 
+          ? 'Direct messages with administrators' 
+          : `Chat with ${currentChat.chatName}`
+      };
+    }
+    
+    return { name: 'Chat', avatar: '💬', description: 'Messages' };
+  };
+
+  const currentChatInfo = getCurrentChatInfo();
   const currentMessages = Array.isArray(messages[activeChat]) ? messages[activeChat] : [];
 
   return (
     <div className="chat-page">
-      {isInitializing ? (
-        <div className="initializing-overlay">
-          <div className="loading">Connecting to chat system...</div>
-        </div>
-      ) : null}
-      
       {error && (
         <div className="error-banner">
           <p>{error}</p>
@@ -169,30 +182,104 @@ const ChatPage = () => {
           </div>
           
           <div className="chat-list">
-            {relevantChats.map(chat => chat && (
-              <div 
-                key={chat.chatId || 'unknown'}
-                className={`chat-list-item ${activeChat === chat.chatId ? 'active' : ''}`}
-                onClick={() => handleChatSelect(chat.chatId)}
-              >
-                <div className={`chat-item-avatar ${chat.chatId === 'announcements' ? 'announcement-avatar' : ''}`}>
-                  {chat.chatId === 'announcements' ? '📢' : '👨‍💼'}
-                </div>
-                <div className="chat-item-info">
-                  <div className="chat-item-name">
-                    {chat.chatId === 'announcements' ? 'Announcements' : 'Admin Chat'}
+            {/* Display all available chats with better organization */}
+            {relevantChats.length > 0 ? (
+              <>
+                {/* Announcements at the top */}
+                {relevantChats.filter(chat => chat?.chatId === 'announcements').map(chat => (
+                  <div 
+                    key={chat.chatId}
+                    className={`chat-list-item ${activeChat === chat.chatId ? 'active' : ''}`}
+                    onClick={() => handleChatSelect(chat.chatId)}
+                  >
+                    <div className="chat-item-avatar announcement-avatar">
+                      {chat.avatar || '📢'}
+                    </div>
+                    <div className="chat-item-info">
+                      <div className="chat-item-name">Announcements</div>
+                      <div className="chat-item-preview">
+                        {getMessagePreview(messages[chat.chatId])}
+                      </div>
+                    </div>
+                    {unreadCounts[chat.chatId] > 0 && (
+                      <div className="unread-badge">{unreadCounts[chat.chatId]}</div>
+                    )}
                   </div>
-                  <div className="chat-item-preview">
-                    {getMessagePreview(messages[chat.chatId])}
-                  </div>
+                ))}
+
+                {/* Separator for Admin Chat */}
+                <div className="chat-list-separator">
+                  <span>Admin Chat</span>
                 </div>
-                {unreadCounts[chat.chatId] > 0 && (
-                  <div className="unread-badge">{unreadCounts[chat.chatId]}</div>
-                )}
-              </div>
-            ))}
-            
-            {relevantChats.length === 0 && (
+
+                {/* Society's own chat with admin */}
+                {relevantChats
+                  .filter(chat => 
+                    chat?.chatType === 'society' && 
+                    ((societyId && chat.chatId === `society-${societyId}`) ||
+                     (societyEmail && chat.members?.some(m => m.userId === societyEmail)) ||
+                     (societyName && chat.chatName === societyName))
+                  )
+                  .map(chat => (
+                    <div 
+                      key={chat.chatId}
+                      className={`chat-list-item ${activeChat === chat.chatId ? 'active' : ''}`}
+                      onClick={() => handleChatSelect(chat.chatId)}
+                    >
+                      <div className="chat-item-avatar">
+                        {chat.avatar || '👨‍💼'}
+                      </div>
+                      <div className="chat-item-info">
+                        <div className="chat-item-name">Admin Chat</div>
+                        <div className="chat-item-preview">
+                          {getMessagePreview(messages[chat.chatId])}
+                        </div>
+                      </div>
+                      {unreadCounts[chat.chatId] > 0 && (
+                        <div className="unread-badge">{unreadCounts[chat.chatId]}</div>
+                      )}
+                    </div>
+                  ))
+                }
+
+                {/* Separator for Other Societies */}
+                <div className="chat-list-separator">
+                  <span>Other Societies</span>
+                </div>
+
+                {/* All other society chats */}
+                {relevantChats
+                  .filter(chat => 
+                    chat?.chatType === 'society' && 
+                    !(societyId && chat.chatId === `society-${societyId}`) &&
+                    !(societyEmail && chat.members?.some(m => m.userId === societyEmail)) &&
+                    !(societyName && chat.chatName === societyName) &&
+                    chat?.chatId !== 'announcements'
+                  )
+                  .sort((a, b) => a.chatName?.localeCompare(b.chatName || ''))
+                  .map(chat => (
+                    <div 
+                      key={chat.chatId}
+                      className={`chat-list-item ${activeChat === chat.chatId ? 'active' : ''}`}
+                      onClick={() => handleChatSelect(chat.chatId)}
+                    >
+                      <div className="chat-item-avatar">
+                        {chat.avatar || '🏛️'}
+                      </div>
+                      <div className="chat-item-info">
+                        <div className="chat-item-name">{chat.chatName || 'Unknown Society'}</div>
+                        <div className="chat-item-preview">
+                          {getMessagePreview(messages[chat.chatId])}
+                        </div>
+                      </div>
+                      {unreadCounts[chat.chatId] > 0 && (
+                        <div className="unread-badge">{unreadCounts[chat.chatId]}</div>
+                      )}
+                    </div>
+                  ))
+                }
+              </>
+            ) : (
               <div className="no-societies-message">
                 No chats available. Please contact an administrator.
               </div>
@@ -202,14 +289,10 @@ const ChatPage = () => {
         
         <div className="chat-main">
           <div className="chat-header">
-            <div className="chat-avatar">{currentChat.avatar}</div>
+            <div className="chat-avatar">{currentChatInfo.avatar}</div>
             <div className="chat-info">
-              <h2>{currentChat.chatName}</h2>
-              <p>
-                {activeChat === 'announcements' 
-                  ? 'University-wide announcements' 
-                  : 'Direct messages with administrators'}
-              </p>
+              <h2>{currentChatInfo.name}</h2>
+              <p>{currentChatInfo.description}</p>
             </div>
           </div>
           
@@ -250,18 +333,19 @@ const ChatPage = () => {
               onKeyUp={handleKeyPress}
               placeholder={
                 activeChat === 'announcements' 
-                  ? 'Reply to announcements...' 
+                  ? 'Type a message to all societies and admin...' 
                   : 'Type a message to administrators...'
               }
               className="chat-input"
-              disabled={activeChat === 'announcements' && currentMessages.length === 0}
+              style={{
+                color: darkMode ? 'white' : 'black',
+                backgroundColor: darkMode ? '#333' : '#fff'
+              }}
             ></textarea>
             <button 
-              className={`send-button ${newMessage.trim() ? 'active' : ''}`}
+              className="send-button"
               onClick={handleSend}
-              disabled={!newMessage.trim() || 
-                        messagesStatus === 'sending' || 
-                        (activeChat === 'announcements' && currentMessages.length === 0)}
+              disabled={!newMessage.trim() || messagesStatus === 'sending'}
             >
               <span className="send-icon">📨</span>
             </button>

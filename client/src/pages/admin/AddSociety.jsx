@@ -43,14 +43,6 @@ const AddSociety = () => {
 
         // Refresh the chat list to include the new society
         dispatch(fetchChats());
-
-        if (
-          window.confirm(
-            'Society created successfully with chat setup. Would you like to go to the chat page?'
-          )
-        ) {
-          navigate('/chat');
-        }
       })
       .catch((error) => {
         setErrorMessage(error || 'Failed to create society. Please try again.');
@@ -145,6 +137,7 @@ const AddSociety = () => {
             <button
               type="button"
               className="btn btn-secondary"
+              style={{ top: '19px' }}
               onClick={handleReset}
             >
               Reset Form

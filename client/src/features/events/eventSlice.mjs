@@ -5,12 +5,19 @@ const API_URL = process.env.NODE_ENV === 'production'
   ? '/api' 
   : 'http://localhost:5000/api';
 
+const config = {
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+  },
+};
+
 // Fetch all events
 export const getAllEvents = createAsyncThunk(
   'events/getAll',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/events`);
+      const response = await axios.get(`${API_URL}/events`, config);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch events');
@@ -23,7 +30,7 @@ export const fetchEvents = createAsyncThunk(
   'events/fetchEvents',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/events`);
+      const response = await axios.get(`${API_URL}/events`, config);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch events');
@@ -153,6 +160,27 @@ export const updateEventStatus = createAsyncThunk(
   }
 );
 
+// Mark event as completed
+export const markEventAsCompleted = createAsyncThunk(
+  'events/markAsCompleted',
+  async (eventId, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : ''
+        }
+      };
+
+      const response = await axios.put(`${API_URL}/events/${eventId}/complete`, {}, config);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to mark event as completed');
+    }
+  }
+);
+
 const initialState = {
   events: [], // Ensure this is initialized as an empty array
   societies: [],
@@ -269,6 +297,34 @@ const eventSlice = createSlice({
         }
       })
       .addCase(updateEventStatus.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      // Mark event as completed
+      .addCase(markEventAsCompleted.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(markEventAsCompleted.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        
+        // Find the event and update its status
+        const eventIndex = state.events.findIndex(event => event._id === action.payload._id);
+        if (eventIndex !== -1) {
+          state.events[eventIndex] = {
+            ...state.events[eventIndex],
+            status: 'completed'
+          };
+        }
+        
+        if (state.currentEvent && state.currentEvent._id === action.payload._id) {
+          state.currentEvent = {
+            ...state.currentEvent,
+            status: 'completed'
+          };
+        }
+      })
+      .addCase(markEventAsCompleted.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       });

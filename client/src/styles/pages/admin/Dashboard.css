@@ -1,5 +1,6 @@
 .dashboard {
   width: 100%;
+  animation: fadeIn 0.5s ease-out;
 }
 
 .dashboard-loading {
@@ -16,7 +17,21 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg) 0;
+  position: relative;
+}
+
+.welcome-section::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+  border-radius: 2px;
 }
 
 @keyframes welcomeGradient {
@@ -82,7 +97,9 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .welcome-section h2 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+    text-align: center;
+    padding: 0 var(--spacing-md);
     background-size: 300% auto;
   }
   
@@ -95,35 +112,42 @@
 .dashboard-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
 }
 
 .stat-card {
   background-color: var(--card-bg);
-  border-radius: 8px;
-  box-shadow: var(--card-shadow);
-  padding: 1.5rem;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-lg);
   display: flex;
   align-items: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform var(--animation-speed-normal) ease, 
+              box-shadow var(--animation-speed-normal) ease;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  position: relative;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background-color: transparent;
+  transition: background-color var(--animation-speed-normal) ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
 }
 
-.stat-icon {
-  font-size: 2rem;
-  background-color: rgba(59, 130, 246, 0.1);
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  margin-right: 1rem;
+.stat-card:hover::before {
+  background-color: var(--accent-color);
 }
 
 .total-societies .stat-icon {
@@ -131,14 +155,27 @@
   color: #6366f1;
 }
 
+.total-societies:hover::before {
+  background-color: #6366f1;
+}
+
 .upcoming-events .stat-icon {
   background-color: rgba(16, 185, 129, 0.1);
   color: #10b981;
 }
 
+.upcoming-events:hover::before {
+  background-color: #10b981;
+}
+
 .available-venues .stat-icon {
   background-color: rgba(245, 158, 11, 0.1);
   color: #f59e0b;
+}
+
+.available-venues:hover::before,
+.completed-events:hover::before {
+  background-color: #f59e0b;
 }
 
 .stat-content {
@@ -161,42 +198,137 @@
 
 .view-details {
   font-size: 0.9rem;
-  color: var(--accent-color);
+  color: var(--text-color);
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.view-details::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background-color: var(--accent-color);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--animation-speed-normal) ease;
+}
+
+.view-details:hover::before {
+  transform: scaleX(1);
+}
+
+.view-all, .manage-all {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  /* Add opacity to make it stand out a bit more */
+  opacity: 0.85;
+  transition: opacity var(--animation-speed-normal) ease, color var(--animation-speed-normal) ease;
+  padding: 6px 12px;
+  border-radius: var(--border-radius-sm);
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+}
+
+.view-all::before,
+.manage-all::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background-color: var(--accent-color);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--animation-speed-normal) ease;
+  /* Increase visibility in dark mode */
+  opacity: 0.9;
+}
+
+.view-all:hover,
+.manage-all:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.view-all:hover::before,
+.manage-all:hover::before {
+  transform: scaleX(1);
+}
+
+/* Specifically enhance dark mode visibility */
+.dark-mode .view-all, 
+.dark-mode .manage-all {
+  /* Override the default text color with a custom color in dark mode */
+  color: #ffffff;  /* White text in dark mode */
+  opacity: 0.9;
+  background-color: rgba(0, 0, 0, 0.2);  /* Dark background in dark mode */
+  border-color: rgba(255, 255, 255, 0.1);  /* Subtle border */
+}
+
+.dark-mode .view-all:hover, 
+.dark-mode .manage-all:hover {
+  color: #ffffff;  /* Keep text white on hover */
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.4);  /* Darker background on hover */
+}
+
+.dark-mode .view-all::before,
+.dark-mode .manage-all::before {
+  background-color: rgba(255, 255, 255, 0.7);  /* Light underline for visibility */
+  opacity: 1;
 }
 
 .dashboard-tables {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
+  gap: var(--spacing-lg);
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .section-header h2 {
   font-size: 1.2rem;
   font-weight: 600;
+  color: var(--text-color);
+  position: relative;
+  padding-bottom: var(--spacing-xs);
 }
 
-.view-all, .manage-all {
-  font-size: 0.9rem;
-  color: var(--accent-color);
-  text-decoration: none;
+.section-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background-color: var(--accent-color);
+  border-radius: 2px;
 }
 
 .recent-events-section {
   display: flex;
   flex-direction: column;
   background-color: var(--card-bg);
-  border-radius: 8px;
-  box-shadow: var(--card-shadow);
-  padding: 1.5rem;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-lg);
   height: 100%;
+  border: 1px solid var(--border-color);
 }
 
 .recent-events-section .section-header {
@@ -205,9 +337,39 @@
 
 .active-societies-section {
   background-color: var(--card-bg);
-  border-radius: 8px;
-  box-shadow: var(--card-shadow);
-  padding: 1.5rem;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.societies-list {
+  margin-top: 1rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.society-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  flex-grow: 1;
+  height: 100%;
+}
+
+.society-card {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-md);
+  transition: all var(--animation-speed-normal) ease;
+  border: 1px solid transparent;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .table-responsive {
@@ -219,31 +381,36 @@
 
 .events-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .events-table th {
   text-align: center;
-  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-  padding: 1rem 1.5rem;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+  padding: 0.8rem 1.2rem;
   border-bottom: 2px solid var(--border-color);
   color: var(--text-color);
-  font-weight: bold;
-  font-size: 1.1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
   background-color: rgba(0, 0, 0, 0.02);
-  letter-spacing: 0.5px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .events-table td {
-   text-align: center;
-  padding: 1.2rem 1.5rem;
+  text-align: center;
+  padding: 0.9rem 1.2rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
   vertical-align: middle;
-  font-size: 1rem;
+  font-size: 0.95rem;
+}
+
+.events-table tbody tr {
+  cursor: var(--cursor-pointer);
 }
 
 .events-table tbody tr:hover {
@@ -278,24 +445,33 @@
 .society-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
 .society-card {
-  background-color: rgba(0, 0, 0, 0.03);
-  border-radius: 6px;
-  padding: 1rem;
-  transition: background-color 0.2s;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-md);
+  transition: all var(--animation-speed-normal) ease;
+  border: 1px solid transparent;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .society-card:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 0, 0, 0.03);
+  border-color: var(--border-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
 }
 
 .society-card h4 {
   font-weight: 600;
   margin-bottom: 0.5rem;
   font-size: 1rem;
+  color: var(--text-color);
 }
 
 .society-card p {
@@ -312,14 +488,48 @@
   opacity: 0.7;
 }
 
+/* Fix for dark mode link colors */
+.dark-mode .view-details {
+  color: var(--text-color);
+}
+
+/* Enhance dark mode visibility for society cards */
+.dark-mode .society-card {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .society-card:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
 @media (max-width: 992px) {
   .dashboard-tables {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  .recent-events-section {
+    margin-bottom: var(--spacing-md);
   }
 }
 
 @media (max-width: 768px) {
   .dashboard-stats {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
   }
+}
+
+/* Add smooth transitions for dark mode */
+.dashboard,
+.stat-card,
+.events-table,
+.society-card,
+.view-details,
+.view-all,
+.manage-all {
+  transition: background-color var(--transition-speed), 
+              color var(--transition-speed),
+              border-color var(--transition-speed),
+              box-shadow var(--transition-speed);
 }

@@ -1,29 +1,32 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api'; // Fixed incorrect double quotes
+const API_URL = 'http://localhost:5000/api';
+const config = {
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('auth_token')}`, // Assuming token is stored in localStorage
+  },
+};
 
 const initialState = {
-  societies: [], 
-  status: 'idle',  
+  societies: [],
+  status: 'idle',
   error: null,
   success: false,
 };
 
 // Async thunk to create a new society
 export const createSociety = createAsyncThunk(
-  'society/createSociety', 
+  'society/createSociety',
   async (societyData, { rejectWithValue, dispatch }) => {
     try {
-      const res = await axios.post(`${API_URL}/add-society`, societyData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const res = await axios.post(`${API_URL}/add-society`, societyData, config);
 
       // After successful society creation, create a chat for this society
-      const newSociety = res.data;
-      
+      const newSociety = res.data.society;
+      console.log('response from createSociety:', res.data);
+
       // Create chat for the new society
       try {
         const chatData = {
@@ -33,37 +36,37 @@ export const createSociety = createAsyncThunk(
           avatar: getAvatarForSociety(newSociety.name),
           members: [
             { userId: 'admin', role: 'admin' },
-            { userId: `society-${newSociety._id}`, role: 'society' }
-          ]
+            { userId: `society-${newSociety._id}`, role: 'society' },
+          ],
         };
-        
-        await axios.post(`http://localhost:5000/api/chat/users`, chatData);
+
+        await axios.post(`${API_URL}/chat/users`, chatData, config);
         console.log('Chat created for new society:', newSociety.name);
-        
+
         // Create welcome message in the new chat
         const welcomeMessage = {
           sender: 'admin',
           content: `Welcome ${newSociety.name}! This is your private chat with the admin.`,
           isAdmin: true,
-          chatId: `society-${newSociety._id}`
+          chatId: `society-${newSociety._id}`,
         };
-        
-        await axios.post(`http://localhost:5000/api/chat/messages`, welcomeMessage);
-        
+
+        await axios.post(`${API_URL}/chat/messages`, welcomeMessage, config);
+
         // Add announcement about new society
         const announcementMessage = {
           sender: 'admin',
           content: `Welcome to our newest society: ${newSociety.name}!`,
           isAdmin: true,
-          chatId: 'announcements'
+          chatId: 'announcements',
         };
-        
-        await axios.post(`http://localhost:5000/api/chat/messages`, announcementMessage);
+
+        await axios.post(`${API_URL}/chat/messages`, announcementMessage, config);
       } catch (error) {
         console.error('Error creating chat for new society:', error);
         // We don't reject the promise here as the society was still created successfully
       }
-      
+
       return res.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create society');
@@ -74,7 +77,7 @@ export const createSociety = createAsyncThunk(
 // Helper function to generate an avatar emoji for the society
 function getAvatarForSociety(societyName) {
   const societyType = societyName.toLowerCase();
-  
+
   if (societyType.includes('computer') || societyType.includes('tech') || societyType.includes('programming')) {
     return '💻';
   } else if (societyType.includes('drama') || societyType.includes('theatre') || societyType.includes('acting')) {
@@ -96,7 +99,7 @@ function getAvatarForSociety(societyName) {
   } else if (societyType.includes('game') || societyType.includes('gaming')) {
     return '🎮';
   }
-  
+
   // Default emoji
   return '🏛️';
 }
@@ -104,8 +107,8 @@ function getAvatarForSociety(societyName) {
 // Async thunk to fetch societies
 export const fetchSocieties = createAsyncThunk('society/fetchSocieties', async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_URL}/societies`); // Corrected route
-    return res.data.societies; // Return the societies array from the response
+    const res = await axios.get(`${API_URL}/societies`, config);
+    return res.data.societies;
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch societies');
   }
@@ -113,8 +116,8 @@ export const fetchSocieties = createAsyncThunk('society/fetchSocieties', async (
 
 export const deleteSociety = createAsyncThunk('society/deleteSociety', async (societyId, { rejectWithValue }) => {
   try {
-    const res = await axios.delete(`${API_URL}/societies/${societyId}`); // Corrected route
-    return societyId; // Return the deleted society ID
+    const res = await axios.delete(`${API_URL}/societies/${societyId}`, config);
+    return societyId;
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to delete society');
   }
@@ -122,8 +125,8 @@ export const deleteSociety = createAsyncThunk('society/deleteSociety', async (so
 
 export const editDescription = createAsyncThunk('society/editDescription', async ({ id, description }, { rejectWithValue }) => {
   try {
-    const res = await axios.patch(`${API_URL}/societies/${id}`, { description }); // Corrected route
-    return res.data.society; // Return the updated society
+    const res = await axios.patch(`${API_URL}/societies/${id}`, { description }, config);
+    return res.data.society;
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to edit description');
   }
@@ -133,7 +136,7 @@ export const editDescription = createAsyncThunk('society/editDescription', async
 export const updateSocietyRating = createAsyncThunk('society/updateSocietyRating', async (id, { rejectWithValue }) => {
   try {
     console.log('Updating society rating for ID:', id);
-    const response = await axios.put(`${API_URL}/societies/${id}/rating`);
+    const response = await axios.put(`${API_URL}/societies/${id}/rating`, {}, config);
     console.log('Society rating updated successfully:', response.data);
     return response.data;
   } catch (error) {

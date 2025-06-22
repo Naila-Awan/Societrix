@@ -12,37 +12,15 @@ const Reports = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const reportsState = useSelector((state) => state.reports);
-  const navigate = useNavigate(); // Use navigate for programmatic routing
+  const navigate = useNavigate();
   
-  // Initialize with default values to avoid undefined errors
   const { events = [], reports = [], loading = true, error = null } = reportsState || {};
   
-  // Filter options
-  const [filter, setFilter] = useState('all'); // 'all', 'pending', 'submitted'
-  
-  // Modal states
-  const [showReportModal, setShowReportModal] = useState(false);
+  const [filter, setFilter] = useState('all');
   const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showAddReportModal, setShowAddReportModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   
-  // Form state
-  const [reportForm, setReportForm] = useState({
-    summary: '',
-    attendees: '',
-    achievements: '',
-    challenges: '',
-    feedback: '',
-    photos: []
-  });
-
-  // Upload progress state
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dataFetched, setDataFetched] = useState(false);
-
-  // State for the add report modal
-  const [showAddReportModal, setShowAddReportModal] = useState(false);
   const [newReport, setNewReport] = useState({
     eventId: '',
     title: '',
@@ -51,20 +29,19 @@ const Reports = () => {
     attendeeCount: '',
   });
 
-  const [completedEvents, setCompletedEvents] = useState([]); // Store completed events for dropdown
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dataFetched, setDataFetched] = useState(false);
+  const [completedEvents, setCompletedEvents] = useState([]);
 
   useEffect(() => {
-    // Track if component is mounted to avoid state updates after unmounting
     let isMounted = true;
     
     const fetchData = async () => {
       try {
-        // Only proceed if we have a societyId
         if (user?.societyId) {
           await dispatch(fetchCompletedEvents(user.societyId));
           await dispatch(fetchSocietyReports(user.societyId));
         } else if (user?.email) {
-          // If no societyId but we have email, try using that
           await dispatch(fetchCompletedEvents(user.email));
           await dispatch(fetchSocietyReports(user.email));
         }
@@ -82,26 +59,9 @@ const Reports = () => {
 
     fetchData();
     
-    // Clean up function
     return () => {
       isMounted = false;
     };
-  }, [dispatch, user]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (user?.email) {
-          // Fetch all completed events and reports for the society
-          await dispatch(fetchCompletedEvents(user.email));
-          await dispatch(fetchSocietyReports(user.email));
-        }
-      } catch (error) {
-        console.error('Error fetching report data:', error);
-      }
-    };
-
-    fetchData();
   }, [dispatch, user]);
 
   useEffect(() => {
@@ -119,158 +79,23 @@ const Reports = () => {
     fetchCompletedEventsForDropdown();
   }, [dispatch, user]);
 
-  // Reset form when modal is opened
   useEffect(() => {
-    if (showReportModal && selectedEvent) {
-      setReportForm({
-        eventId: selectedEvent._id,
-        summary: '',
-        attendees: selectedEvent.estimatedAttendees || '',
-        achievements: '',
-        challenges: '',
-        feedback: '',
-        photos: []
-      });
-      setUploadProgress(0);
-    }
-  }, [showReportModal, selectedEvent]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setReportForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handlePhotoUpload = (e) => {
-    const files = Array.from(e.target.files);
-    
-    // Validate file types and sizes
-    const validFiles = files.filter(file => {
-      const isImage = file.type.startsWith('image/');
-      const isUnderLimit = file.size <= 5 * 1024 * 1024; // 5MB limit
-      
-      if (!isImage) {
-        alert(`${file.name} is not an image file`);
-      }
-      if (!isUnderLimit) {
-        alert(`${file.name} exceeds the 5MB size limit`);
-      }
-      
-      return isImage && isUnderLimit;
-    });
-    
-    if (validFiles.length > 0) {
-      // Convert images to base64
-      const imagePromises = validFiles.map(file => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = e => resolve({
-            data: e.target.result,
-            name: file.name,
-            type: file.type,
-            size: file.size
-          });
-          reader.readAsDataURL(file);
-        });
-      });
-      
-      // When all promises resolve, update state
-      Promise.all(imagePromises).then(images => {
-        setReportForm(prev => ({
-          ...prev,
-          photos: [...prev.photos, ...images]
-        }));
+    if (showAddReportModal) {
+      setNewReport({
+        eventId: '',
+        title: '',
+        content: '',
+        attachments: [],
+        attendeeCount: '',
       });
     }
-  };
-  
-  const removePhoto = (index) => {
-    setReportForm(prev => ({
-      ...prev,
-      photos: prev.photos.filter((_, i) => i !== index)
-    }));
-  };
-  
-  const handleCreateReport = (event) => {
-    setSelectedEvent(event);
-    setShowReportModal(true);
-  };
-  
+  }, [showAddReportModal]);
+
   const handleViewReport = (report) => {
     setSelectedReport(report);
     setShowViewModal(true);
   };
   
-  const handleSubmitReport = async (e) => {
-    e.preventDefault();
-    
-    // Validate form
-    if (!reportForm.summary || !reportForm.attendees) {
-      alert('Please fill in all required fields');
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          const newProgress = prev + 5;
-          if (newProgress >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return newProgress;
-        });
-      }, 200);
-      
-      // Submit report
-      await dispatch(submitEventReport({
-        ...reportForm,
-        societyId: user?.societyId,
-        eventId: selectedEvent._id
-      })).unwrap();
-      
-      // Complete progress
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      
-      // Close modal after a short delay
-      setTimeout(() => {
-        setShowReportModal(false);
-        setIsSubmitting(false);
-        setUploadProgress(0);
-        // Refresh reports
-        if (user?.societyId) {
-          dispatch(fetchSocietyReports(user.societyId));
-          dispatch(fetchCompletedEvents(user.societyId));
-        }
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Error submitting report:', error);
-      setIsSubmitting(false);
-      setUploadProgress(0);
-      alert('Failed to submit report. Please try again.');
-    }
-  };
-  
-  // Helper to check if an event already has a report
-  const hasReport = (eventId) => {
-    return reports.some(report => report.eventId === eventId);
-  };
-  
-  // Filter events based on selected filter
-  const filteredEvents = Array.isArray(events) ? events.filter(event => {
-    if (filter === 'all') return true;
-    if (filter === 'pending') return !hasReport(event._id);
-    if (filter === 'submitted') return hasReport(event._id);
-    return true;
-  }) : [];
-
   const handleAddReportInputChange = (e) => {
     const { name, value } = e.target;
     setNewReport((prev) => ({
@@ -282,11 +107,12 @@ const Reports = () => {
   const handleAddReportSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate form
     if (!newReport.eventId || !newReport.title || !newReport.content || !newReport.attendeeCount) {
       alert('Please fill in all required fields');
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       const payload = {
@@ -306,7 +132,6 @@ const Reports = () => {
         attendeeCount: '',
       });
 
-      // Re-fetch all reports for the society
       if (user?.email) {
         await dispatch(fetchSocietyReports(user.email));
       }
@@ -315,6 +140,8 @@ const Reports = () => {
     } catch (error) {
       console.error('Error adding report:', error);
       alert('Failed to add report. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -337,7 +164,28 @@ const Reports = () => {
     }));
   };
 
-  // If data hasn't been fetched yet or is loading, show a loading indicator
+  const hasReport = (eventId) => {
+    return reports.some(report => report.eventId === eventId);
+  };
+  
+  const filteredEvents = Array.isArray(events) ? events.filter(event => {
+    if (filter === 'all') return true;
+    if (filter === 'pending') return !hasReport(event._id);
+    if (filter === 'submitted') return hasReport(event._id);
+    return true;
+  }) : [];
+
+  const openAddReportForEvent = (event) => {
+    setNewReport({
+      eventId: event._id,
+      title: '',
+      content: '',
+      attachments: [],
+      attendeeCount: '',
+    });
+    setShowAddReportModal(true);
+  };
+
   if (loading && !dataFetched) {
     return (
       <div className="society-reports-page">
@@ -353,7 +201,6 @@ const Reports = () => {
     );
   }
 
-  // If there was an error fetching the data
   if (error && dataFetched) {
     return (
       <div className="society-reports-page">
@@ -470,9 +317,9 @@ const Reports = () => {
                   ) : (
                     <button 
                       className="btn btn-primary"
-                      onClick={() => handleCreateReport(event)}
+                      onClick={() => openAddReportForEvent(event)}
                     >
-                      Create Report
+                      Add Report
                     </button>
                   )}
                 </div>
@@ -483,173 +330,12 @@ const Reports = () => {
       )}
       
       <button
-        className="btn btn-primary"
+        className="btn btn-primary add-report-btn"
         onClick={() => setShowAddReportModal(true)}
       >
-        Add Report
+        Add New Report
       </button>
 
-      {/* Create Report Modal */}
-      {showReportModal && selectedEvent && (
-        <div className="modal-overlay">
-          <div className="modal report-modal">
-            <div className="modal-header">
-              <h2>Create Event Report</h2>
-              <button 
-                className="close-btn" 
-                onClick={() => !isSubmitting && setShowReportModal(false)}
-                disabled={isSubmitting}
-              >
-                ×
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmitReport} className="report-form">
-              <div className="event-info-banner">
-                <h3>{selectedEvent.eventName}</h3>
-                <p>{new Date(selectedEvent.date).toLocaleDateString()}</p>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="attendees">
-                  Actual Attendees <span className="required">*</span>
-                </label>
-                <input
-                  type="number"
-                  id="attendees"
-                  name="attendees"
-                  value={reportForm.attendees}
-                  onChange={handleInputChange}
-                  min="0"
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="summary">
-                  Event Summary <span className="required">*</span>
-                </label>
-                <textarea
-                  id="summary"
-                  name="summary"
-                  value={reportForm.summary}
-                  onChange={handleInputChange}
-                  rows="4"
-                  placeholder="Provide an overview of how the event went..."
-                  required
-                ></textarea>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="achievements">Key Achievements</label>
-                <textarea
-                  id="achievements"
-                  name="achievements"
-                  value={reportForm.achievements}
-                  onChange={handleInputChange}
-                  rows="3"
-                  placeholder="List major achievements or milestones from this event..."
-                ></textarea>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="challenges">Challenges Faced</label>
-                <textarea
-                  id="challenges"
-                  name="challenges"
-                  value={reportForm.challenges}
-                  onChange={handleInputChange}
-                  rows="3"
-                  placeholder="Describe any challenges or issues encountered..."
-                ></textarea>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="feedback">Participant Feedback</label>
-                <textarea
-                  id="feedback"
-                  name="feedback"
-                  value={reportForm.feedback}
-                  onChange={handleInputChange}
-                  rows="3"
-                  placeholder="Share feedback received from participants..."
-                ></textarea>
-              </div>
-              
-              <div className="form-group">
-                <label>Event Photos (Max 5MB per image)</label>
-                
-                <div className="photo-upload-container">
-                  <label className="upload-button" htmlFor="photos">
-                    <span className="upload-icon">+</span>
-                    Upload Images
-                  </label>
-                  <input
-                    type="file"
-                    id="photos"
-                    name="photos"
-                    onChange={handlePhotoUpload}
-                    accept="image/jpeg, image/png, image/gif"
-                    multiple
-                    className="hidden-input"
-                  />
-                  
-                  <div className="upload-hint">
-                    You can upload multiple images (JPEG, PNG, GIF)
-                  </div>
-                </div>
-                
-                {reportForm.photos.length > 0 && (
-                  <div className="photo-preview-container">
-                    {reportForm.photos.map((photo, index) => (
-                      <div key={index} className="photo-preview">
-                        <img src={photo.data} alt={`Preview ${index + 1}`} />
-                        <button 
-                          type="button" 
-                          className="remove-photo-btn"
-                          onClick={() => removePhoto(index)}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {isSubmitting && (
-                <div className="upload-progress">
-                  <div 
-                    className="progress-bar" 
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                  <span className="progress-text">{uploadProgress}%</span>
-                </div>
-              )}
-              
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowReportModal(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Report'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      
-      {/* Add Report Modal */}
       {showAddReportModal && (
         <div className="modal-overlay">
           <div className="modal add-report-modal">
@@ -658,6 +344,7 @@ const Reports = () => {
               <button
                 className="close-btn"
                 onClick={() => setShowAddReportModal(false)}
+                disabled={isSubmitting}
               >
                 ×
               </button>
@@ -671,6 +358,7 @@ const Reports = () => {
                   value={newReport.eventId}
                   onChange={(e) => setNewReport({ ...newReport, eventId: e.target.value })}
                   required
+                  disabled={isSubmitting}
                 >
                   <option value="">Select an event</option>
                   {completedEvents.map((event) => (
@@ -687,8 +375,10 @@ const Reports = () => {
                   id="title"
                   name="title"
                   value={newReport.title}
-                  onChange={(e) => setNewReport({ ...newReport, title: e.target.value })}
+                  onChange={handleAddReportInputChange}
                   required
+                  disabled={isSubmitting}
+                  placeholder="Enter report title"
                 />
               </div>
               <div className="form-group">
@@ -697,9 +387,11 @@ const Reports = () => {
                   id="content"
                   name="content"
                   value={newReport.content}
-                  onChange={(e) => setNewReport({ ...newReport, content: e.target.value })}
+                  onChange={handleAddReportInputChange}
                   rows="4"
                   required
+                  disabled={isSubmitting}
+                  placeholder="Provide details about the event outcome..."
                 ></textarea>
               </div>
               <div className="form-group">
@@ -709,9 +401,11 @@ const Reports = () => {
                   id="attendeeCount"
                   name="attendeeCount"
                   value={newReport.attendeeCount}
-                  onChange={(e) => setNewReport({ ...newReport, attendeeCount: e.target.value })}
+                  onChange={handleAddReportInputChange}
                   min="0"
                   required
+                  disabled={isSubmitting}
+                  placeholder="Enter the number of attendees"
                 />
               </div>
               <div className="form-group">
@@ -720,6 +414,7 @@ const Reports = () => {
                   type="file"
                   onChange={handleAttachmentUpload}
                   multiple
+                  disabled={isSubmitting}
                 />
                 <div className="attachments-list">
                   {newReport.attachments.map((attachment, index) => (
@@ -729,6 +424,7 @@ const Reports = () => {
                         type="button"
                         className="remove-attachment-btn"
                         onClick={() => removeAttachment(index)}
+                        disabled={isSubmitting}
                       >
                         ×
                       </button>
@@ -741,11 +437,16 @@ const Reports = () => {
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setShowAddReportModal(false)}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Submit
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Report'}
                 </button>
               </div>
             </form>
@@ -753,7 +454,6 @@ const Reports = () => {
         </div>
       )}
 
-      {/* View Report Modal */}
       {showViewModal && selectedReport && (
         <div className="modal-overlay">
           <div className="modal report-view-modal">
@@ -778,7 +478,7 @@ const Reports = () => {
               
               <div className="report-section">
                 <h4>Event Summary</h4>
-                <p>{selectedReport.summary}</p>
+                <p>{selectedReport.summary || selectedReport.content}</p>
               </div>
               
               <div className="report-stats">
@@ -827,6 +527,19 @@ const Reports = () => {
                           src={photo.data || photo.url} 
                           alt={`Event photo ${index + 1}`} 
                         />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {selectedReport.attachments && selectedReport.attachments.length > 0 && (
+                <div className="report-section">
+                  <h4>Attachments</h4>
+                  <div className="attachment-list">
+                    {selectedReport.attachments.map((attachment, index) => (
+                      <div key={index} className="attachment-item">
+                        <span>{attachment.name} ({attachment.size})</span>
                       </div>
                     ))}
                   </div>

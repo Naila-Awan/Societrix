@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = { 
   authenticator: false,
-  userType: "admin", // Default user type
+  userType: "admin",
   user: null
 };
 
@@ -10,7 +10,6 @@ const authenticatorSlice = createSlice({
   name: 'authenticator',
   initialState,
   reducers: {
-    // Toggle authentication state 
     toggleAuthentication: (state) => {
       state.authenticator = !state.authenticator;
     },

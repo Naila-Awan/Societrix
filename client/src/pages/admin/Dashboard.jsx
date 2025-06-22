@@ -96,7 +96,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="dashboard">
+    <div className="dashboard page-transition">
       <div className="welcome-section">
         <h2>Welcome to Societrix - Your campus society management hub</h2>
       </div>
@@ -158,7 +158,9 @@ const Dashboard = () => {
                         <td>{event.eventName}</td>
                         <td>{societyName}</td>
                         <td>{new Date(event.date).toLocaleDateString()}</td>
-                        <td>{event.venue}</td>
+                        <td>
+                          <span className="venue-label">{event.venue}</span>
+                        </td>
                       </tr>
                     );
                   })

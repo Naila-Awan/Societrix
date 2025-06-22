@@ -6,10 +6,13 @@ const router = express.Router();
 // Get all reports
 router.get('/', getAllReports);
 
+// Add a new route to get ALL reports
+router.get('/all', getAllReports);
+
 // Submit a new report
 router.post('/', submitReport);
 
-// Update report rating
+// Important: Make this PUT instead of other methods to match the client's expectation
 router.put('/:id/rating', updateReportRating);
 
 // Get reports for a specific society

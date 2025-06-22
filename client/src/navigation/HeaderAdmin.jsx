@@ -179,7 +179,7 @@ const Header = ({ toggleSidebar, onLogout, toggleTheme, darkMode }) => {
             onClick={() => setShowDropdown(!showDropdown)}
           >
             <img 
-              src="src\assets\IMG_7624.JPG" 
+              src="src\assets\logo.png" 
               alt="Admin User" 
               className="profile-image" 
             />

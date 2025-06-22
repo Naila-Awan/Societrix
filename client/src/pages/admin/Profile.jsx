@@ -1,18 +1,21 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { updatePassword } from '../../features/users/userSlice.mjs';
 import '../../styles/pages/admin/Profile.css';
 
 const Profile = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   
   // Initialize with localStorage values if available
   const [profileData, setProfileData] = useState({
     name: localStorage.getItem('user_name') || 'Hissan Butt',
     email: localStorage.getItem('user_email') || 'admin@societrix.com',
     phone: '+92 333 456 9111',
-    role: 'System Administrator',
+    role: 'admin',
     joinDate: 'January 11, 2024',
-    profilePicture: 'src/assets/IMG_7624.JPG'
+    profilePicture: 'src/assets/logo.png'
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -27,6 +30,7 @@ const Profile = () => {
   
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
   
   // Update form data if localStorage values change
@@ -97,32 +101,27 @@ const Profile = () => {
   
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     try {
-      // Simulating API call with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Save to localStorage
-      localStorage.setItem('user_name', formData.name);
-      localStorage.setItem('user_email', formData.email);
-      
-      // Update profile data
-      setProfileData({
-        ...profileData,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone
-      });
-      
+      setIsLoading(true);
+      const userId = localStorage.getItem('auth_token');
+      await dispatch(updatePassword({
+        userId,
+        role: 'Admin',
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      })).unwrap();
+
       setSuccessMessage('Profile updated successfully');
       setIsEditing(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
-      setErrors({ submit: 'Failed to update profile. Please try again.' });
+      setErrors({ submit: error || 'Failed to update profile. Please try again.' });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -282,7 +281,9 @@ const Profile = () => {
                 {errors.submit && <div className="error-message">{errors.submit}</div>}
                 
                 <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">Save Changes</button>
+                  <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                    {isLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
                 </div>
               </form>
             ) : (

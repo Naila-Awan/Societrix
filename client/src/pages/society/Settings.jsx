@@ -8,8 +8,6 @@ const Settings = () => {
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    password: '',
-    confirmPassword: '',
     profileImage: user?.profileImage || null
   });
   
@@ -61,11 +59,6 @@ const Settings = () => {
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    if (profileData.password !== profileData.confirmPassword) {
-      alert("Passwords don't match!");
-      return;
-    }
     
     // In a real app, you would send this data to your API
     console.log('Saving profile:', profileData);
@@ -134,31 +127,6 @@ const Settings = () => {
                 value={profileData.email}
                 onChange={handleInputChange}
                 required
-              />
-            </div>
-            
-            <div className="form-divider"></div>
-            <h3>Change Password</h3>
-            
-            <div className="form-group">
-              <label htmlFor="password">New Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={profileData.password}
-                onChange={handleInputChange}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={profileData.confirmPassword}
-                onChange={handleInputChange}
               />
             </div>
             

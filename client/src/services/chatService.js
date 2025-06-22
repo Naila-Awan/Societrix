@@ -2,6 +2,13 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
 
+const config = {
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+  },
+};
+
 export const createSocietyChat = async (society) => {
   try {
     const chatData = {
@@ -15,7 +22,7 @@ export const createSocietyChat = async (society) => {
       ]
     };
     
-    const response = await axios.post(`${API_URL}/chat/users`, chatData);
+    const response = await axios.post(`${API_URL}/chat/users`, chatData, config);
     return response.data;
   } catch (error) {
     console.error('Error creating chat for society:', error);
@@ -31,7 +38,7 @@ export const addChatMessage = async (chatId, sender, content, isAdmin = false) =
       chatId
     };
     
-    const response = await axios.post(`${API_URL}/chat/messages`, messageData);
+    const response = await axios.post(`${API_URL}/chat/messages`, messageData, config);
     return response.data;
   } catch (error) {
     console.error('Error adding chat message:', error);
@@ -42,7 +49,7 @@ export const addChatMessage = async (chatId, sender, content, isAdmin = false) =
 export const initializeChatSystem = async () => {
   try {
     // First fetch all societies
-    const societiesResponse = await axios.get(`${API_URL}/societies`);
+    const societiesResponse = await axios.get(`${API_URL}/societies`, config);
     const societies = societiesResponse.data.societies || [];
     
     // Create chats for all societies
@@ -51,7 +58,7 @@ export const initializeChatSystem = async () => {
         _id: society._id,
         name: society.name
       }))
-    });
+    }, config);
     
     return response.data;
   } catch (error) {
@@ -63,7 +70,7 @@ export const initializeChatSystem = async () => {
 
 export const getAllChats = async () => {
   try {
-    const response = await axios.get(`${API_URL}/chat/users`);
+    const response = await axios.get(`${API_URL}/chat/users`, config);
     return response.data;
   } catch (error) {
     console.error('Error getting chats:', error);
@@ -73,7 +80,7 @@ export const getAllChats = async () => {
 
 export const getChatMessages = async (chatId) => {
   try {
-    const response = await axios.get(`${API_URL}/chat/messages/${chatId}`);
+    const response = await axios.get(`${API_URL}/chat/messages/${chatId}`, config);
     return response.data;
   } catch (error) {
     console.error(`Error getting messages for chat ${chatId}:`, error);

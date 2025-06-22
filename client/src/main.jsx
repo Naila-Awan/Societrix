@@ -6,7 +6,7 @@ import App from './App.jsx';
 
 import { fetchChats } from './features/chat/chatUsersSlice.mjs';
 
-store.dispatch(fetchChats());
+// store.dispatch(fetchChats());
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

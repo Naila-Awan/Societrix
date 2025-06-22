@@ -8,6 +8,7 @@ import chatMessagesRoutes from './routes/chatMessagesRoutes.mjs';
 import chatUsersRoutes from './routes/chatUsersRoutes.mjs';
 import cors from 'cors';
 import loginRoutes from './routes/loginRoutes.mjs';
+import { authenticateUser } from './middleware/authMiddleware.mjs'; 
 
 dotenv.config();
 connection();
@@ -16,16 +17,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Add a test route to check API connectivity
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'API is working!' });
-});
+app.use('/api/login', loginRoutes);
 
 app.use('/api', societyRoutes); 
 app.use('/api/events', eventRoutes);
 app.use('/api/reports', reportRoutes);
-app.use('/api/login', loginRoutes);
-// Fix the chat routes to match the client's expectations
 app.use('/api/chat/messages', chatMessagesRoutes);
 app.use('/api/chat/users', chatUsersRoutes);
 
